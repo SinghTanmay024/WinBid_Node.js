@@ -6,11 +6,19 @@ const User = require('../models/User');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRE = process.env.JWT_EXPIRE || '30d';
+const JWT_EXPIRE = process.env.JWT_EXPIRE || '24h'; // Default: 24 hours (as per requirements)
 const COOKIE_EXPIRE = process.env.COOKIE_EXPIRE || 30;
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, JWT_SECRET, {
+const generateToken = (user) => {
+  // Support both user object and user ID (for backward compatibility)
+  const payload = {
+    id: user._id || user.id || user,
+    email: user.email,
+    username: user.username,
+    isEmailVerified: user.isEmailVerified || false
+  };
+  
+  return jwt.sign(payload, JWT_SECRET, {
     expiresIn: JWT_EXPIRE
   });
 };
@@ -32,8 +40,15 @@ const hashPassword = async (password) => {
 const protect = async (req, res, next) => {
   let token;
 
-  // Get token from cookies
-  token = req.cookies.jwt;
+  // Get token from Authorization header (Bearer token)
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+  
+  // Fallback to cookie if no Bearer token is provided
+  if (!token) {
+    token = req.cookies.jwt;
+  }
 
   if (!token) {
     return res.status(401).json({
@@ -48,6 +63,13 @@ const protect = async (req, res, next) => {
 
     // Get user from the token
     req.user = await User.findById(decoded.id).select('-password');
+
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
 
     next();
   } catch (error) {

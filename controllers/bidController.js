@@ -26,9 +26,15 @@ class BidController {
         const result = await BidService.processBid(bid._id);
 
         res.status(201).json({
-            status: 'success',
+            success: true,
+            message: 'Bid placed successfully',
             data: {
-                bid,
+                _id: bid._id,
+                productId: bid.product.toString(),
+                userId: bid.user.toString(),
+                amount: bid.bidAmount,
+                bidTime: bid.bidTime,
+                wishlistRemoved: result.wishlistRemoved || false,
                 ...result
             }
         });

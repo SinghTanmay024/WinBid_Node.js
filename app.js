@@ -8,7 +8,9 @@ const cookieParser = require('cookie-parser');
 
 
 const app = express();
-app.use(cors());
+
+// Trust proxy for accurate IP addresses (important for rate limiting)
+app.set('trust proxy', 1);
 
 app.get('/api/data', (req, res) => {
   res.json({ message: 'Hello from Winbid!' });
@@ -26,6 +28,8 @@ require('./models/User');
 require('./models/Product');
 require('./models/Bid');
 require('./models/Winner');
+require('./models/Wishlist');
+require('./models/Contact');
 
 // Routes
 const userRoutes = require('./routes/userRoutes');
@@ -42,6 +46,12 @@ app.use('/api/bids', bidRouter);
 
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
+
+const wishlistRoutes = require('./routes/wishlistRoutes');
+app.use('/api/users', wishlistRoutes);
+
+const contactRoutes = require('./routes/contactRoutes');
+app.use('/api/contact', contactRoutes);
 
 
 // Error handling middleware

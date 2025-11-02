@@ -21,7 +21,7 @@ class ProductService {
 
     static async getProductById(productId) {
         try {
-            return await Product.findById(productId);
+            return await Product.findOne({ _id: productId, deletedAt: null });
         } catch (error) {
             throw error;
         }
@@ -29,7 +29,7 @@ class ProductService {
 
     static async getAllProducts() {
         try {
-            return await Product.find({});
+            return await Product.find({ deletedAt: null });
         } catch (error) {
             throw error;
         }
@@ -37,8 +37,8 @@ class ProductService {
 
     static async updateProduct(productId, updateData) {
         try {
-            return await Product.findByIdAndUpdate(
-                productId,
+            return await Product.findOneAndUpdate(
+                { _id: productId, deletedAt: null },
                 updateData,
                 { new: true, runValidators: true }
             );
@@ -49,7 +49,11 @@ class ProductService {
 
     static async deleteProduct(productId) {
         try {
-            return await Product.findByIdAndDelete(productId);
+            return await Product.findOneAndUpdate(
+                { _id: productId, deletedAt: null },
+                { deletedAt: new Date() },
+                { new: true }
+            );
         } catch (error) {
             throw error;
         }

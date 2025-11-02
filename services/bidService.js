@@ -1,6 +1,7 @@
 const Bid = require('../models/Bid');
 const Product = require('../models/Product');
 const Winner = require('../models/Winner');
+const Wishlist = require('../models/Wishlist');
 
 class BidService {
     
@@ -24,6 +25,19 @@ class BidService {
 
         const product = await Product.findById(bid.product);
         if (!product) throw new Error('Product not found');
+
+        // Remove product from user's wishlist if it exists
+        let wishlistRemoved = false;
+        try {
+            const deletedWishlistItem = await Wishlist.findOneAndDelete({
+                userId: bid.user,
+                productId: bid.product
+            });
+            wishlistRemoved = !!deletedWishlistItem;
+        } catch (error) {
+            console.error('Error removing from wishlist:', error);
+            // Don't fail the bid creation if wishlist removal fails
+        }
 
         // Increment the bid count
         product.currentBidCount += 1;
@@ -57,13 +71,15 @@ class BidService {
             return { 
                 product, 
                 winner,
-                isBiddingComplete: true 
+                isBiddingComplete: true,
+                wishlistRemoved 
             };
         } else {
             await product.save();
             return { 
                 product, 
-                isBiddingComplete: false 
+                isBiddingComplete: false,
+                wishlistRemoved 
             };
         }
     }
